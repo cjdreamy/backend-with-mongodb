@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProductHub</title>
+    <meta name="description" content="Manage your product inventory — add, edit, and delete products with ease." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ── Tokens ─────────────────────────────────── */
+        :root {
+            --bg: #0d0f14;
+            --surface: #161b26;
+            --surface2: #1f2636;
+            --border: #2a3247;
+            --accent: #6c63ff;
+            --accent-glow: rgba(108, 99, 255, .35);
+            --accent-dark: #4b44c9;
+            --danger: #ff4d6d;
+            --danger-dark: #c9244a;
+            --success: #22c55e;
+            --warn: #f59e0b;
+            --text: #e8eaf0;
+            --muted: #8891a8;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .45);
+            --transition: .2s ease;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        /* ── Header ─────────────────────────────────── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13, 15, 20, .85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            font-size: 1.4rem;
+            color: var(--accent);
+            filter: drop-shadow(0 0 8px var(--accent));
+        }
+
+        /* ── Stats Bar ──────────────────────────────── */
+        .stats-bar {
+            max-width: 1200px;
+            margin: 28px auto 0;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .4);
+        }
+
+        .stat-label {
+            font-size: .78rem;
+            font-weight: 500;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Toolbar ────────────────────────────────── */
+        .toolbar {
+            max-width: 1200px;
+            margin: 24px auto 0;
+            padding: 0 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 11px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--text);
+            font-size: .95rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        .search-input::placeholder {
+            color: var(--muted);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* ── API Banner ─────────────────────────────── */
+        .api-banner {
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 0 24px;
+        }
+
+        .api-banner-inner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: rgba(108, 99, 255, .1);
+            border: 1px solid rgba(108, 99, 255, .4);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: .88rem;
+            color: var(--muted);
+        }
+
+        .api-banner-inner span {
+            flex-shrink: 0;
+        }
+
+        .api-banner-inner code {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 7px;
+            color: var(--accent);
+            font-size: .82rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .api-connect-btn {
+            padding: 6px 14px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: .82rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transition);
+            flex-shrink: 0;
+        }
+
+        .api-connect-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .api-url-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 6px 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: .86rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .api-url-input:focus {
+            border-color: var(--accent);
+        }
+
+        .api-status {
+            font-size: .78rem;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .api-status.online {
+            background: rgba(34, 197, 94, .15);
+            color: var(--success);
+        }
+
+        .api-status.offline {
+            background: rgba(255, 77, 109, .15);
+            color: var(--danger);
+        }
+
+        .api-status.unknown {
+            background: rgba(245, 158, 11, .15);
+            color: var(--warn);
+        }
+
+        /* ── Grid ───────────────────────────────────── */
+        .grid-container {
+            max-width: 1200px;
+            margin: 28px auto 80px;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 20px;
+        }
+
+        /* ── Product Card ───────────────────────────── */
+        .product-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+            animation: fadeUp .3s ease both;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+            border-color: var(--accent);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-img-wrap {
+            width: 100%;
+            height: 180px;
+            background: var(--surface2);
+            overflow: hidden;
+        }
+
+        .card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .4s ease;
+        }
+
+        .product-card:hover .card-img-wrap img {
+            transform: scale(1.06);
+        }
+
+        .img-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--muted);
+        }
+
+        .card-body {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.3;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .card-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .card-desc {
+            font-size: .84rem;
+            color: var(--muted);
+            line-height: 1.5;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: .7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .badge-ok {
+            background: rgba(34, 197, 94, .15);
+            color: var(--success);
+        }
+
+        .badge-low {
+            background: rgba(245, 158, 11, .15);
+            color: var(--warn);
+        }
+
+        .badge-out {
+            background: rgba(255, 77, 109, .15);
+            color: var(--danger);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 6px;
+            padding: 10px 16px 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-icon {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface2);
+            cursor: pointer;
+            font-size: .95rem;
+            color: var(--text);
+            transition: background var(--transition), transform var(--transition), border-color var(--transition);
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.08);
+        }
+
+        .btn-view:hover {
+            background: rgba(108, 99, 255, .2);
+            border-color: var(--accent);
+        }
+
+        .btn-edit:hover {
+            background: rgba(245, 158, 11, .18);
+            border-color: var(--warn);
+        }
+
+        .btn-delete:hover {
+            background: rgba(255, 77, 109, .18);
+            border-color: var(--danger);
+        }
+
+        /* ── Buttons ────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+        }
+
+        .btn:active {
+            transform: scale(.97);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 0 18px var(--accent-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+            box-shadow: 0 0 18px rgba(255, 77, 109, .35);
+        }
+
+        /* ── Modals ─────────────────────────────────── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(6px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            transition: opacity .25s ease;
+        }
+
+        .modal-backdrop.visible {
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            transform: translateY(24px);
+            transition: transform .25s ease;
+        }
+
+        .modal-backdrop.visible .modal {
+            transform: translateY(0);
+        }
+
+        .modal-sm {
+            max-width: 400px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Form ───────────────────────────────────── */
+        #productForm {
+            padding: 20px 24px 0;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .two-col {
+            flex-direction: row;
+        }
+
+        .two-col>* {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        label {
+            font-size: .82rem;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: .03em;
+        }
+
+        .required {
+            color: var(--danger);
+        }
+
+        input[type=text],
+        input[type=number],
+        input[type=url],
+        input[type=search],
+        textarea {
+            padding: 10px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: inherit;
+            font-size: .92rem;
+            outline: none;
+            width: 100%;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .field-error {
+            font-size: .78rem;
+            color: var(--danger);
+            min-height: 16px;
+        }
+
+        /* ── View Detail ─────────────────────────────── */
+        .view-content {
+            padding: 20px 24px;
+        }
+
+        .view-img {
+            width: 100%;
+            max-height: 240px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+        }
+
+        .detail-list {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 10px 16px;
+        }
+
+        dt {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            padding-top: 2px;
+        }
+
+        dd {
+            font-size: .95rem;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        .mono {
+            font-family: 'Courier New', monospace;
+            font-size: .82rem;
+            color: var(--muted);
+        }
+
+        /* ── Delete Modal ────────────────────────────── */
+        .delete-msg {
+            padding: 16px 24px;
+            color: var(--muted);
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
+        /* ── Toast ──────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            translate: -50% 0;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 22px;
+            border-radius: 999px;
+            font-size: .9rem;
+            font-weight: 500;
+            box-shadow: var(--shadow);
+            z-index: 300;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .25s ease, transform .25s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .toast.success {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        /* ── Loader / Empty ─────────────────────────── */
+        .loader {
+            grid-column: 1/-1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 60px 0;
+            color: var(--muted);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-state {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h2 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ── Scrollbar ──────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 999px;
+        }
+
+        /* ── Responsive ─────────────────────────────── */
+        @media (max-width:640px) {
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .two-col {
+                flex-direction: column;
+            }
+
+            .modal {
+                border-radius: var(--radius) var(--radius) 0 0;
+            }
+
+            .modal-backdrop {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .header-inner,
+            .stats-bar,
+            .toolbar,
+            .grid-container,
+            .api-banner {
+                padding: 0 16px;
+            }
+
+            .stats-bar,
+            .toolbar,
+            .grid-container,
+            .api-banner {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ── Header ──────────────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">&#9632;</span>
+                <span class="logo-text">ProductHub</span>
+            </div>
+            <button class="btn btn-primary" id="openAddModal">+ New Product</button>
+        </div>
+    </header>
+
+    <!-- ── API Connection Banner ────────────────────────────────── -->
+    <div class="api-banner" id="apiBanner">
+        <div class="api-banner-inner">
+            <span>🔌 Backend API:</span>
+            <input class="api-url-input" id="apiUrlInput" type="url" placeholder="https://your-api.onrender.com" />
+            <button class="api-connect-btn" id="apiConnectBtn">Connect</button>
+            <span class="api-status unknown" id="apiStatus">Not connected</span>
+        </div>
+    </div>
+
+    <!-- ── Stats Bar ────────────────────────────────────────────── -->
+    <section class="stats-bar">
+        <div class="stat-card">
+            <span class="stat-label">Total Products</span>
+            <span class="stat-value" id="statTotal">—</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Qty</span>
+            <span class="stat-value" id="statQty">—</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Avg Price</span>
+            <span class="stat-value" id="statAvgPrice">—</span>
+        </div>
+    </section>
+
+    <!-- ── Toolbar ──────────────────────────────────────────────── -->
+    <div class="toolbar">
+        <input type="search" id="searchInput" class="search-input" placeholder="🔍  Search products…" />
+    </div>
+
+    <!-- ── Toast ────────────────────────────────────────────────── -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ── Product Grid ─────────────────────────────────────────── -->
+    <main class="grid-container" id="productGrid">
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Connecting to API…</p>
+        </div>
+    </main>
+
+    <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">📦</div>
+        <h2>No products yet</h2>
+        <p>Click <strong>+ New Product</strong> to add your first one.</p>
+    </div>
+
+    <!-- ═══ MODAL – Add / Edit ══════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="modalBackdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Product</h2>
+                <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
+            </div>
+            <form id="productForm" novalidate>
+                <input type="hidden" id="editId" />
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="fieldName">Name <span class="required">*</span></label>
+                        <input type="text" id="fieldName" placeholder="e.g. Wireless Keyboard" required />
+                        <span class="field-error" id="errName"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldPrice">Price ($) <span class="required">*</span></label>
+                        <input type="number" id="fieldPrice" placeholder="0.00" min="0" step="0.01" required />
+                        <span class="field-error" id="errPrice"></span>
+                    </div>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="fieldQty">Quantity</label>
+                        <input type="number" id="fieldQty" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldImage">Image URL</label>
+                        <input type="url" id="fieldImage" placeholder="https://…" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="fieldDesc">Description</label>
+                    <textarea id="fieldDesc" rows="3" placeholder="Short product description…"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="cancelModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Create Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL – Delete Confirm ══════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="deleteBackdrop">
+        <div class="modal modal-sm" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h2>Delete Product?</h2>
+                <button class="modal-close" id="closeDeleteModal" aria-label="Close">&times;</button>
+            </div>
+            <p class="delete-msg">This action cannot be undone. <strong id="deleteProductName"></strong> will be
+                permanently removed.</p>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="cancelDelete">Cancel</button>
+                <button class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL – View Detail ══════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="viewBackdrop">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h2 id="viewTitle">Product Details</h2>
+                <button class="modal-close" id="closeViewModal" aria-label="Close">&times;</button>
+            </div>
+            <div id="viewContent" class="view-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // ─────────────────────────────────────────────
+        //  CONFIG  ← set your deployed backend URL here
+        // ─────────────────────────────────────────────
+        let API_BASE = localStorage.getItem('api_base') || '';
+
+        // ─────────────────────────────────────────────
+        //  State
+        // ─────────────────────────────────────────────
+        let allProducts = [];
+        let pendingDeleteId = null;
+
+        // ─────────────────────────────────────────────
+        //  DOM refs
+        // ─────────────────────────────────────────────
+        const productGrid = document.getElementById('productGrid');
+        const loader = document.getElementById('loader');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const toast = document.getElementById('toast');
+        const statTotal = document.getElementById('statTotal');
+        const statQty = document.getElementById('statQty');
+        const statAvgPrice = document.getElementById('statAvgPrice');
+
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalTitle = document.getElementById('modalTitle');
+        const productForm = document.getElementById('productForm');
+        const editIdInput = document.getElementById('editId');
+        const submitBtn = document.getElementById('submitBtn');
+        const fieldName = document.getElementById('fieldName');
+        const fieldPrice = document.getElementById('fieldPrice');
+        const fieldQty = document.getElementById('fieldQty');
+        const fieldImage = document.getElementById('fieldImage');
+        const fieldDesc = document.getElementById('fieldDesc');
+
+        const deleteBackdrop = document.getElementById('deleteBackdrop');
+        const deleteProductName = document.getElementById('deleteProductName');
+        const viewBackdrop = document.getElementById('viewBackdrop');
+        const viewTitle = document.getElementById('viewTitle');
+        const viewContent = document.getElementById('viewContent');
+
+        const apiUrlInput = document.getElementById('apiUrlInput');
+        const apiConnectBtn = document.getElementById('apiConnectBtn');
+        const apiStatus = document.getElementById('apiStatus');
+
+        // ─────────────────────────────────────────────
+        //  API Banner
+        // ─────────────────────────────────────────────
+        apiUrlInput.value = API_BASE;
+
+        apiConnectBtn.addEventListener('click', () => {
+            const val = apiUrlInput.value.trim().replace(/\/$/, '');
+            if (!val) { showToast('Enter your backend URL first.', 'error'); return; }
+            API_BASE = val;
+            localStorage.setItem('api_base', API_BASE);
+            loadProducts();
+        });
+
+        function setApiStatus(state) {
+            apiStatus.className = 'api-status ' + state;
+            apiStatus.textContent = state === 'online' ? '● Online' : state === 'offline' ? '● Offline' : 'Not connected';
+        }
+
+        // ─────────────────────────────────────────────
+        //  Toast
+        // ─────────────────────────────────────────────
+        let toastTimer;
+        function showToast(msg, type = 'success') {
+            toast.textContent = msg;
+            toast.className = `toast show ${type}`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.className = 'toast'; }, 3200);
+        }
+
+        // ─────────────────────────────────────────────
+        //  API helper
+        // ─────────────────────────────────────────────
+        async function api(path, method = 'GET', body = null) {
+            if (!API_BASE) throw new Error('No API base set');
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(API_BASE + path, opts);
+            return res.json();
+        }
+
+        // ─────────────────────────────────────────────
+        //  Load & Render
+        // ─────────────────────────────────────────────
+        async function loadProducts() {
+            if (!API_BASE) {
+                loader.querySelector('p').textContent = 'Enter your backend API URL above to get started.';
+                return;
+            }
+            loader.classList.remove('hidden');
+            loader.querySelector('p').textContent = 'Loading products…';
+            emptyState.classList.add('hidden');
+            [...productGrid.querySelectorAll('.product-card')].forEach(c => c.remove());
+
+            try {
+                const data = await api('/products');
+                allProducts = data.products || [];
+                setApiStatus('online');
+                renderProducts(allProducts);
+                updateStats(allProducts);
+            } catch (e) {
+                setApiStatus('offline');
+                showToast('Could not reach the backend.', 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        function renderProducts(products) {
+            [...productGrid.querySelectorAll('.product-card')].forEach(c => c.remove());
+            if (!products.length) { emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+            products.forEach(p => productGrid.appendChild(buildCard(p)));
+        }
+
+        function buildCard(p) {
+            const card = document.createElement('article');
+            card.className = 'product-card';
+            const qty = p.quantity ?? 0;
+            const qtyBadge = qty === 0
+                ? `<span class="badge badge-out">Out of stock</span>`
+                : qty < 5
+                    ? `<span class="badge badge-low">Low: ${qty}</span>`
+                    : `<span class="badge badge-ok">${qty} in stock</span>`;
+            const imgHtml = p.image
+                ? `<div class="card-img-wrap"><img src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.parentElement.innerHTML='<div class=\\'img-placeholder\\'>📦</div>'" /></div>`
+                : `<div class="card-img-wrap"><div class="img-placeholder">📦</div></div>`;
+            card.innerHTML = `
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-top">
+          <h3 class="card-title">${esc(p.name)}</h3>
+          ${qtyBadge}
+        </div>
+        <p class="card-price">$${Number(p.price).toFixed(2)}</p>
+        ${p.description ? `<p class="card-desc">${esc(p.description)}</p>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="btn-icon btn-view"   title="View">👁</button>
+        <button class="btn-icon btn-edit"   title="Edit">✏️</button>
+        <button class="btn-icon btn-delete" title="Delete">🗑</button>
+      </div>`;
+            card.querySelector('.btn-view').addEventListener('click', () => openView(p._id));
+            card.querySelector('.btn-edit').addEventListener('click', () => openEdit(p._id));
+            card.querySelector('.btn-delete').addEventListener('click', () => openDelete(p._id, p.name));
+            return card;
+        }
+
+        function esc(s = '') {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function updateStats(products) {
+            statTotal.textContent = products.length;
+            statQty.textContent = products.reduce((s, p) => s + (p.quantity || 0), 0);
+            const avg = products.length
+                ? (products.reduce((s, p) => s + (p.price || 0), 0) / products.length).toFixed(2)
+                : '0.00';
+            statAvgPrice.textContent = `$${avg}`;
+        }
+
+        // ─────────────────────────────────────────────
+        //  Search
+        // ─────────────────────────────────────────────
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase().trim();
+            renderProducts(q ? allProducts.filter(p =>
+                p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)
+            ) : allProducts);
+        });
+
+        // ─────────────────────────────────────────────
+        //  Add / Edit Modal
+        // ─────────────────────────────────────────────
+        function openAdd() {
+            editIdInput.value = '';
+            productForm.reset(); clearErrors();
+            modalTitle.textContent = 'Add Product';
+            submitBtn.textContent = 'Create Product';
+            showModal(modalBackdrop); fieldName.focus();
+        }
+
+        async function openEdit(id) {
+            try {
+                const { product: p } = await api(`/products/${id}`);
+                editIdInput.value = p._id;
+                fieldName.value = p.name || '';
+                fieldPrice.value = p.price ?? '';
+                fieldQty.value = p.quantity ?? '';
+                fieldImage.value = p.image || '';
+                fieldDesc.value = p.description || '';
+                clearErrors();
+                modalTitle.textContent = 'Edit Product';
+                submitBtn.textContent = 'Save Changes';
+                showModal(modalBackdrop); fieldName.focus();
+            } catch { showToast('Could not load product.', 'error'); }
+        }
+
+        productForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!validateForm()) return;
+            const body = {
+                name: fieldName.value.trim(),
+                price: parseFloat(fieldPrice.value),
+                quantity: parseInt(fieldQty.value) || 0,
+                image: fieldImage.value.trim(),
+                description: fieldDesc.value.trim(),
+            };
+            const id = editIdInput.value;
+            submitBtn.disabled = true;
+            submitBtn.textContent = id ? 'Saving…' : 'Creating…';
+            try {
+                if (id) { await api(`/products/${id}`, 'PUT', body); showToast('Product updated! ✅'); }
+                else { await api('/products', 'POST', body); showToast('Product created! 🎉'); }
+                closeModal(modalBackdrop);
+                await loadProducts();
+            } catch { showToast('Something went wrong.', 'error'); }
+            finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = id ? 'Save Changes' : 'Create Product';
+            }
+        });
+
+        function validateForm() {
+            let ok = true; clearErrors();
+            if (!fieldName.value.trim()) { setError('errName', 'Name is required'); ok = false; }
+            if (!fieldPrice.value || isNaN(parseFloat(fieldPrice.value))) { setError('errPrice', 'Valid price is required'); ok = false; }
+            return ok;
+        }
+        function setError(id, msg) { document.getElementById(id).textContent = msg; }
+        function clearErrors() { document.querySelectorAll('.field-error').forEach(e => e.textContent = ''); }
+
+        // ─────────────────────────────────────────────
+        //  Delete Modal
+        // ─────────────────────────────────────────────
+        function openDelete(id, name) {
+            pendingDeleteId = id;
+            deleteProductName.textContent = name;
+            showModal(deleteBackdrop);
+        }
+        document.getElementById('confirmDelete').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
+            try {
+                await api(`/products/${pendingDeleteId}`, 'DELETE');
+                showToast('Product deleted.');
+                closeModal(deleteBackdrop);
+                await loadProducts();
+            } catch { showToast('Delete failed.', 'error'); }
+            finally { pendingDeleteId = null; }
+        });
+
+        // ─────────────────────────────────────────────
+        //  View Modal
+        // ─────────────────────────────────────────────
+        async function openView(id) {
+            try {
+                const { product: p } = await api(`/products/${id}`);
+                viewTitle.textContent = p.name;
+                viewContent.innerHTML = `
+        ${p.image ? `<img class="view-img" src="${esc(p.image)}" alt="${esc(p.name)}" onerror="this.remove()" />` : ''}
+        <dl class="detail-list">
+          <dt>Price</dt>       <dd>$${Number(p.price).toFixed(2)}</dd>
+          <dt>Quantity</dt>    <dd>${p.quantity ?? 0}</dd>
+          <dt>Description</dt><dd>${esc(p.description || '—')}</dd>
+          <dt>ID</dt>         <dd class="mono">${p._id}</dd>
+        </dl>`;
+                showModal(viewBackdrop);
+            } catch { showToast('Could not load product details.', 'error'); }
+        }
+
+        // ─────────────────────────────────────────────
+        //  Modal helpers
+        // ─────────────────────────────────────────────
+        function showModal(bd) {
+            bd.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => bd.classList.add('visible'));
+        }
+        function closeModal(bd) {
+            bd.classList.remove('visible');
+            document.body.style.overflow = '';
+            setTimeout(() => bd.classList.add('hidden'), 250);
+        }
+
+        // Wire close buttons
+        document.getElementById('openAddModal').addEventListener('click', openAdd);
+        document.getElementById('closeModal').addEventListener('click', () => closeModal(modalBackdrop));
+        document.getElementById('cancelModal').addEventListener('click', () => closeModal(modalBackdrop));
+        document.getElementById('closeDeleteModal').addEventListener('click', () => closeModal(deleteBackdrop));
+        document.getElementById('cancelDelete').addEventListener('click', () => closeModal(deleteBackdrop));
+        document.getElementById('closeViewModal').addEventListener('click', () => closeModal(viewBackdrop));
+        [modalBackdrop, deleteBackdrop, viewBackdrop].forEach(bd => {
+            bd.addEventListener('click', e => { if (e.target === bd) closeModal(bd); });
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape')
+                [modalBackdrop, deleteBackdrop, viewBackdrop].forEach(bd => {
+                    if (!bd.classList.contains('hidden')) closeModal(bd);
+                });
+        });
+
+        // ─────────────────────────────────────────────
+        //  Init
+        // ─────────────────────────────────────────────
+        if (API_BASE) loadProducts();
+        else loader.querySelector('p').textContent = 'Enter your backend API URL above to get started.';
+    </script>
+</body>
+
+</html>
