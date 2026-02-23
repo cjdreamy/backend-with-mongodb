@@ -1,12 +1,470 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="index.css">
-    <title>mongodb bknd</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Manager</title>
+    <meta name="description" content="Manage your product inventory — add, edit, and delete products with ease." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="index.css" />
 </head>
+
 <body>
-    
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">&#9632;</span>
+                <span class="logo-text">ProductHub</span>
+            </div>
+            <button class="btn btn-primary" id="openAddModal">+ New Product</button>
+        </div>
+    </header>
+
+    <!-- ── Hero / Stats Bar ───────────────────────────────── -->
+    <section class="stats-bar" id="statsBar">
+        <div class="stat-card">
+            <span class="stat-label">Total Products</span>
+            <span class="stat-value" id="statTotal">—</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Total Qty</span>
+            <span class="stat-value" id="statQty">—</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Avg Price</span>
+            <span class="stat-value" id="statAvgPrice">—</span>
+        </div>
+    </section>
+
+    <!-- ── Search / Filter Bar ────────────────────────────── -->
+    <div class="toolbar">
+        <input type="search" id="searchInput" class="search-input" placeholder="🔍  Search products…" />
+    </div>
+
+    <!-- ── Toast notification ─────────────────────────────── -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ── Product Grid ───────────────────────────────────── -->
+    <main class="grid-container" id="productGrid">
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Loading products…</p>
+        </div>
+    </main>
+
+    <!-- ── Empty State ────────────────────────────────────── -->
+    <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">📦</div>
+        <h2>No products yet</h2>
+        <p>Click <strong>+ New Product</strong> to add your first one.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL – Add / Edit Product
+  ══════════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="modalBackdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Product</h2>
+                <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
+            </div>
+
+            <form id="productForm" novalidate>
+                <input type="hidden" id="editId" />
+
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="fieldName">Name <span class="required">*</span></label>
+                        <input type="text" id="fieldName" placeholder="e.g. Wireless Keyboard" required />
+                        <span class="field-error" id="errName"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldPrice">Price ($) <span class="required">*</span></label>
+                        <input type="number" id="fieldPrice" placeholder="0.00" min="0" step="0.01" required />
+                        <span class="field-error" id="errPrice"></span>
+                    </div>
+                </div>
+
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="fieldQty">Quantity</label>
+                        <input type="number" id="fieldQty" placeholder="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label for="fieldImage">Image URL</label>
+                        <input type="url" id="fieldImage" placeholder="https://…" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fieldDesc">Description</label>
+                    <textarea id="fieldDesc" rows="3" placeholder="Short product description…"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-ghost" id="cancelModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Create Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MODAL – Delete Confirm
+  ══════════════════════════════════════════════════════════ -->
+    <div class="modal-backdrop hidden" id="deleteBackdrop">
+        <div class="modal modal-sm" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h2>Delete Product?</h2>
+                <button class="modal-close" id="closeDeleteModal" aria-label="Close">&times;</button>
+            </div>
+            <p class="delete-msg">This action cannot be undone. The product <strong id="deleteProductName"></strong>
+                will be permanently removed.</p>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="cancelDelete">Cancel</button>
+                <button class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── View Detail Modal ───────────────────────────────── -->
+    <div class="modal-backdrop hidden" id="viewBackdrop">
+        <div class="modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h2 id="viewTitle">Product Details</h2>
+                <button class="modal-close" id="closeViewModal" aria-label="Close">&times;</button>
+            </div>
+            <div id="viewContent" class="view-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════
+        //  State
+        // ═══════════════════════════════════════════
+        let allProducts = [];
+        let pendingDeleteId = null;
+
+        // ═══════════════════════════════════════════
+        //  DOM Refs
+        // ═══════════════════════════════════════════
+        const productGrid = document.getElementById('productGrid');
+        const loader = document.getElementById('loader');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const toast = document.getElementById('toast');
+
+        // Add/Edit modal
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalTitle = document.getElementById('modalTitle');
+        const productForm = document.getElementById('productForm');
+        const editIdInput = document.getElementById('editId');
+        const submitBtn = document.getElementById('submitBtn');
+        const fieldName = document.getElementById('fieldName');
+        const fieldPrice = document.getElementById('fieldPrice');
+        const fieldQty = document.getElementById('fieldQty');
+        const fieldImage = document.getElementById('fieldImage');
+        const fieldDesc = document.getElementById('fieldDesc');
+
+        // Delete modal
+        const deleteBackdrop = document.getElementById('deleteBackdrop');
+        const deleteProductName = document.getElementById('deleteProductName');
+
+        // View modal
+        const viewBackdrop = document.getElementById('viewBackdrop');
+        const viewTitle = document.getElementById('viewTitle');
+        const viewContent = document.getElementById('viewContent');
+
+        // Stats
+        const statTotal = document.getElementById('statTotal');
+        const statQty = document.getElementById('statQty');
+        const statAvgPrice = document.getElementById('statAvgPrice');
+
+        // ═══════════════════════════════════════════
+        //  Toast helper
+        // ═══════════════════════════════════════════
+        let toastTimer;
+        function showToast(msg, type = 'success') {
+            toast.textContent = msg;
+            toast.className = `toast show ${type}`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.className = 'toast'; }, 3200);
+        }
+
+        // ═══════════════════════════════════════════
+        //  API helpers
+        // ═══════════════════════════════════════════
+        async function api(path, method = 'GET', body = null) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(path, opts);
+            return res.json();
+        }
+
+        // ═══════════════════════════════════════════
+        //  Fetch & render all products
+        // ═══════════════════════════════════════════
+        async function loadProducts() {
+            loader.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            // Clear cards but keep loader
+            [...productGrid.querySelectorAll('.product-card')].forEach(c => c.remove());
+
+            try {
+                const data = await api('/products');
+                allProducts = data.products || [];
+                renderProducts(allProducts);
+                updateStats(allProducts);
+            } catch (e) {
+                showToast('Failed to connect to server.', 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        function renderProducts(products) {
+            [...productGrid.querySelectorAll('.product-card')].forEach(c => c.remove());
+            if (!products.length) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+            products.forEach(p => productGrid.appendChild(buildCard(p)));
+        }
+
+        function buildCard(p) {
+            const card = document.createElement('article');
+            card.className = 'product-card';
+            card.dataset.id = p._id;
+
+            const imgHtml = p.image
+                ? `<div class="card-img-wrap"><img src="${escHtml(p.image)}" alt="${escHtml(p.name)}" onerror="this.parentElement.innerHTML='<div class=\\'img-placeholder\\'>📦</div>'" /></div>`
+                : `<div class="card-img-wrap"><div class="img-placeholder">📦</div></div>`;
+
+            const qty = p.quantity ?? 0;
+            const qtyBadge = qty === 0
+                ? `<span class="badge badge-out">Out of stock</span>`
+                : qty < 5
+                    ? `<span class="badge badge-low">Low: ${qty}</span>`
+                    : `<span class="badge badge-ok">${qty} in stock</span>`;
+
+            card.innerHTML = `
+        ${imgHtml}
+        <div class="card-body">
+          <div class="card-top">
+            <h3 class="card-title" title="${escHtml(p.name)}">${escHtml(p.name)}</h3>
+            ${qtyBadge}
+          </div>
+          <p class="card-price">$${Number(p.price).toFixed(2)}</p>
+          ${p.description ? `<p class="card-desc">${escHtml(p.description)}</p>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn-icon btn-view"  data-id="${p._id}" title="View" aria-label="View ${escHtml(p.name)}">👁</button>
+          <button class="btn-icon btn-edit"  data-id="${p._id}" title="Edit" aria-label="Edit ${escHtml(p.name)}">✏️</button>
+          <button class="btn-icon btn-delete" data-id="${p._id}" title="Delete" aria-label="Delete ${escHtml(p.name)}">🗑</button>
+        </div>
+      `;
+
+            card.querySelector('.btn-view').addEventListener('click', () => openView(p._id));
+            card.querySelector('.btn-edit').addEventListener('click', () => openEdit(p._id));
+            card.querySelector('.btn-delete').addEventListener('click', () => openDelete(p._id, p.name));
+
+            return card;
+        }
+
+        function escHtml(str = '') {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Stats
+        function updateStats(products) {
+            statTotal.textContent = products.length;
+            const totalQty = products.reduce((s, p) => s + (p.quantity || 0), 0);
+            statQty.textContent = totalQty;
+            const avg = products.length
+                ? (products.reduce((s, p) => s + (p.price || 0), 0) / products.length).toFixed(2)
+                : '0.00';
+            statAvgPrice.textContent = `$${avg}`;
+        }
+
+        // ═══════════════════════════════════════════
+        //  Search
+        // ═══════════════════════════════════════════
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase().trim();
+            renderProducts(q ? allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)) : allProducts);
+        });
+
+        // ═══════════════════════════════════════════
+        //  Add / Edit Modal
+        // ═══════════════════════════════════════════
+        function openAdd() {
+            editIdInput.value = '';
+            productForm.reset();
+            clearErrors();
+            modalTitle.textContent = 'Add Product';
+            submitBtn.textContent = 'Create Product';
+            showModal(modalBackdrop);
+            fieldName.focus();
+        }
+
+        async function openEdit(id) {
+            try {
+                const data = await api(`/products/${id}`);
+                const p = data.product;
+                editIdInput.value = p._id;
+                fieldName.value = p.name || '';
+                fieldPrice.value = p.price ?? '';
+                fieldQty.value = p.quantity ?? '';
+                fieldImage.value = p.image || '';
+                fieldDesc.value = p.description || '';
+                clearErrors();
+                modalTitle.textContent = 'Edit Product';
+                submitBtn.textContent = 'Save Changes';
+                showModal(modalBackdrop);
+                fieldName.focus();
+            } catch (e) {
+                showToast('Could not load product.', 'error');
+            }
+        }
+
+        productForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            if (!validateForm()) return;
+
+            const body = {
+                name: fieldName.value.trim(),
+                price: parseFloat(fieldPrice.value),
+                quantity: parseInt(fieldQty.value) || 0,
+                image: fieldImage.value.trim(),
+                description: fieldDesc.value.trim(),
+            };
+
+            const id = editIdInput.value;
+            submitBtn.disabled = true;
+            submitBtn.textContent = id ? 'Saving…' : 'Creating…';
+
+            try {
+                if (id) {
+                    await api(`/products/${id}`, 'PUT', body);
+                    showToast('Product updated! ✅');
+                } else {
+                    await api('/products', 'POST', body);
+                    showToast('Product created! 🎉');
+                }
+                closeModal(modalBackdrop);
+                await loadProducts();
+            } catch (err) {
+                showToast('Something went wrong.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = id ? 'Save Changes' : 'Create Product';
+            }
+        });
+
+        function validateForm() {
+            let ok = true;
+            clearErrors();
+            if (!fieldName.value.trim()) { setError('errName', 'Name is required'); ok = false; }
+            if (!fieldPrice.value || isNaN(parseFloat(fieldPrice.value))) { setError('errPrice', 'Valid price is required'); ok = false; }
+            return ok;
+        }
+        function setError(id, msg) { document.getElementById(id).textContent = msg; }
+        function clearErrors() { document.querySelectorAll('.field-error').forEach(e => e.textContent = ''); }
+
+        // ═══════════════════════════════════════════
+        //  Delete Modal
+        // ═══════════════════════════════════════════
+        function openDelete(id, name) {
+            pendingDeleteId = id;
+            deleteProductName.textContent = name;
+            showModal(deleteBackdrop);
+        }
+
+        document.getElementById('confirmDelete').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
+            try {
+                await api(`/products/${pendingDeleteId}`, 'DELETE');
+                showToast('Product deleted.');
+                closeModal(deleteBackdrop);
+                await loadProducts();
+            } catch (e) {
+                showToast('Delete failed.', 'error');
+            } finally {
+                pendingDeleteId = null;
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        //  View Modal
+        // ═══════════════════════════════════════════
+        async function openView(id) {
+            try {
+                const data = await api(`/products/${id}`);
+                const p = data.product;
+                viewTitle.textContent = p.name;
+                viewContent.innerHTML = `
+          ${p.image ? `<img class="view-img" src="${escHtml(p.image)}" alt="${escHtml(p.name)}" onerror="this.remove()" />` : ''}
+          <dl class="detail-list">
+            <dt>Price</dt>       <dd>$${Number(p.price).toFixed(2)}</dd>
+            <dt>Quantity</dt>    <dd>${p.quantity ?? 0}</dd>
+            <dt>Description</dt><dd>${escHtml(p.description || '—')}</dd>
+            <dt>ID</dt>         <dd class="mono">${p._id}</dd>
+          </dl>
+        `;
+                showModal(viewBackdrop);
+            } catch (e) {
+                showToast('Could not load product details.', 'error');
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        //  Modal helpers
+        // ═══════════════════════════════════════════
+        function showModal(backdrop) {
+            backdrop.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => backdrop.classList.add('visible'));
+        }
+        function closeModal(backdrop) {
+            backdrop.classList.remove('visible');
+            document.body.style.overflow = '';
+            setTimeout(() => backdrop.classList.add('hidden'), 250);
+        }
+
+        // Wire close buttons
+        document.getElementById('openAddModal').addEventListener('click', openAdd);
+        document.getElementById('closeModal').addEventListener('click', () => closeModal(modalBackdrop));
+        document.getElementById('cancelModal').addEventListener('click', () => closeModal(modalBackdrop));
+        document.getElementById('closeDeleteModal').addEventListener('click', () => closeModal(deleteBackdrop));
+        document.getElementById('cancelDelete').addEventListener('click', () => closeModal(deleteBackdrop));
+        document.getElementById('closeViewModal').addEventListener('click', () => closeModal(viewBackdrop));
+
+        // Close on backdrop click
+        [modalBackdrop, deleteBackdrop, viewBackdrop].forEach(bd => {
+            bd.addEventListener('click', e => { if (e.target === bd) closeModal(bd); });
+        });
+
+        // Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                [modalBackdrop, deleteBackdrop, viewBackdrop].forEach(bd => {
+                    if (!bd.classList.contains('hidden')) closeModal(bd);
+                });
+            }
+        });
+
+        // ═══════════════════════════════════════════
+        //  Init
+        // ═══════════════════════════════════════════
+        loadProducts();
+    </script>
 </body>
+
 </html>
